@@ -1,0 +1,66 @@
+#ウインドウ画面の表示と画像を扱うモジュール
+import tkinter as tk
+import tkinter.filedialog as fd
+import PIL.Image
+import PIL.ImageTk
+
+#機械学習で使うモジュール
+import sklearn.datasets
+import sklearn.svm
+import numpy
+
+
+
+#画像ファイルを数値リストに変換する
+def imageToData(filename):
+  #画像を8x8のグレースケールに変換
+  grayImage = PIL.Image.open(filename).convert("L")
+  grayImage = grayImage.resize((8,8),PIL.Image.ANTIALIAS)
+  #その画像を表示する。8x8を300x300にする
+  dispImage = PIL.ImageTk.PhotoImage(grayImage.resize((300,300)))
+  imageLabel.configure(image = dispImage)
+  imageLabel.image = dispImage
+
+  #画像を数値リストに変換
+  numImage = numpy.asarray(grayImage,dtype = float)
+  numImage = numpy.floor(16 - 16 * (numImage / 256))
+  numImage = numImage.flatten()
+  return numImage
+
+
+# #imageToDataで受け取ったデータを数字かどうか予測する
+def predictDigits(data):
+  #学習データを読み込む
+  digits = sklearn.datasets.load_digits()
+  # 機械学習
+  clf = sklearn.svm.SVC(gamma = 0.001)
+  clf.fit(digits.data, digits.target)
+  #予測結果を表示する
+  n = clf.predict([data])
+  textLabel.configure(text = "この画像は" + str(n) + "です！")
+
+# ファイルダイアログを開く
+def openFile():
+  fpath = fd.askopenfilename()
+  if fpath:
+    #画像ファイルを数値リストに変換する。
+    data = imageToData(fpath)
+    #数字を予測する
+    predictDigits(data)
+
+
+#アプリのウインドウを作る
+root = tk.Tk()
+root.geometry("400x400")
+
+# ファイルを開くボタン ボタンをクリックすると関数が実行される。
+btn = tk.Button(root, text="ファイルを開く", command = openFile) 
+imageLabel = tk.Label()
+btn.pack()
+imageLabel.pack()
+
+#予測結果を表示するラベルと設置
+textLabel = tk.Label(text="手書きの数字を認識します！")
+textLabel.pack()
+#mainloopで実行
+tk.mainloop()
